@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <process id="CustomerFlow" name="CustomerFlow" isExecutable="true">
+    <documentation>客户报备流程！</documentation>
+    <startEvent id="startevent1" name="Start"></startEvent>
+    <endEvent id="endevent1" name="End">
+      <extensionElements>
+        <activiti:executionListener event="start" delegateExpression="${endListener}"></activiti:executionListener>
+      </extensionElements>
+    </endEvent>
+    <userTask id="提交客户资料确认申请Id" name="提交客户资料确认申请" activiti:assignee="${seller}" activiti:formKey="/WEB-INF/jsps/customer/taskForm.jsp"></userTask>
+    <sequenceFlow id="flow1" sourceRef="startevent1" targetRef="提交客户资料确认申请Id"></sequenceFlow>
+    <userTask id="客户资料确认审批Id" name="客户资料确认审批" default="flow4" activiti:formKey="/WEB-INF/jsps/customer/taskForm.jsp">
+      <extensionElements>
+        <activiti:taskListener event="create" delegateExpression="${managerSettingListener}"></activiti:taskListener>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow2" name="通过" sourceRef="提交客户资料确认申请Id" targetRef="客户资料确认审批Id">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${flag==true}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow3" name="通过" sourceRef="客户资料确认审批Id" targetRef="endevent1">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${flag==true}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow4" name="驳回" sourceRef="客户资料确认审批Id" targetRef="提交客户资料确认申请Id">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${flag==flase}]]></conditionExpression>
+    </sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_CustomerFlow">
+    <bpmndi:BPMNPlane bpmnElement="CustomerFlow" id="BPMNPlane_CustomerFlow">
+      <bpmndi:BPMNShape bpmnElement="startevent1" id="BPMNShape_startevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="-80.0" y="-30.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent1" id="BPMNShape_endevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="-80.0" y="370.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="提交客户资料确认申请Id" id="BPMNShape_提交客户资料确认申请Id">
+        <omgdc:Bounds height="101.0" width="189.0" x="-157.0" y="60.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="客户资料确认审批Id" id="BPMNShape_客户资料确认审批Id">
+        <omgdc:Bounds height="101.0" width="151.0" x="-138.0" y="207.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="-63.0" y="5.0"></omgdi:waypoint>
+        <omgdi:waypoint x="-63.0" y="60.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="-63.0" y="161.0"></omgdi:waypoint>
+        <omgdi:waypoint x="-63.0" y="207.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="32.0" x="-53.0" y="161.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="-63.0" y="308.0"></omgdi:waypoint>
+        <omgdi:waypoint x="-63.0" y="370.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="32.0" x="-46.0" y="329.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="13.0" y="257.0"></omgdi:waypoint>
+        <omgdi:waypoint x="143.0" y="257.0"></omgdi:waypoint>
+        <omgdi:waypoint x="247.0" y="257.0"></omgdi:waypoint>
+        <omgdi:waypoint x="247.0" y="175.0"></omgdi:waypoint>
+        <omgdi:waypoint x="247.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="207.0" y="110.0"></omgdi:waypoint>
+        <omgdi:waypoint x="32.0" y="110.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="32.0" x="271.0" y="170.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

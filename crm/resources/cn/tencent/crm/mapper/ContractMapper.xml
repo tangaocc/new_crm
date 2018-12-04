@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.ContractMapper">	
+	<select id="loadById" parameterType="long" resultType="Contract">
+		select * from t_contract where id = #{id}
+	</select>
+	
+	<select id="loadAll" resultType="Contract">
+		select * from t_contract
+	</select>
+	<delete id="remove" parameterType="long">
+		delete from t_contract where id = #{id}
+	</delete>
+	
+	<insert id="save" parameterType="Contract" useGeneratedKeys="true" 
+		keyColumn="id" keyProperty="id">
+		insert into t_contract(sn,signTime,sum,intro,seller_id,customer_id) 
+		values(#{sn},#{signTime},#{sum},#{intro},#{seller.id},#{customer.id})
+	</insert>
+	
+	<update id="update" parameterType="Contract">
+		update t_contract set signTime=#{signTime},sum=#{sum},intro=#{intro},seller_id=#{seller.id},customer_id=#{customer.id} where id=#{id}
+	</update>
+	
+	
+	<select id="queryPageCount" resultType="int" parameterType="ContractQuery">
+		select count(*) from t_contract o
+		<!-- <include refid="whereSql"/> -->
+	</select>
+	
+	<select id="queryPageData" parameterType="ContractQuery" resultMap="contractMap">
+		SELECT o.*,o.signTime,e.id eid,e.realName erealName,c.id cid,c.`name` cname from t_contract o
+		LEFT JOIN t_employee e
+		on o.seller_id=e.id
+		LEFT JOIN t_customer c
+		on o.customer_id=c.id
+<!-- 		<include refid="whereSql"/> -->
+		limit #{start},#{rows}
+	</select>
+	<sql id="whereSql">
+		<where>
+			<if test="beginTime != null">
+				and o.signTime >=#{beginTime}
+			</if>
+			<if test="endTime != null">
+				and o.signTime &lt; #{endTime}
+			</if>
+			<if test="sn !=null and sn!=''">
+				and o.sn = #{sn} 
+			</if>
+			<if test="sum !=null and sum!=''">
+				and o.sum =#{sum}
+			</if>
+			<if test="q !=null and q!=''">
+				and o.intro like concat ("%",#{q},"%")
+			</if>
+			<if test="customerId != null">
+				and o.customer_id = #{customerId}
+			</if>
+			<if test="sellerId != null">
+				and o.seller_id = #{sellerId}
+			</if>
+		</where>
+	</sql>
+	
+	<resultMap type="Contract" id="contractMap" >
+		<id column="id" property="id"/>
+		<result column="sn" property="sn"/>
+		<result column="signTime" property="signTime"/>
+		<result column="sum" property="sum"/>
+		<result column="intro" property="intro"/>
+		<association property="customer" javaType="Customer">
+			<id column="cid" property="id"/>
+			<result column="cname" property="name"/>
+		</association>
+		<association property="seller" javaType="Employee">
+			<id column="eid" property="id"/>
+			<result column="erealName" property="realName"/>
+		</association>
+		
+		<!-- 合同明细 -->
+		<collection property="details" select="cn.tencent.crm.mapper.ContractMapper.getItemsById" ofType="ContractItem" javaType="list" column="id">
+			<id property="id" column="id" />
+			<result property="isPayment" column="isPayment" />
+			<result property="payTime" column="payTime" />
+			<result property="money" column="money" />
+			<result property="scale" column="scale" />		
+		</collection>
+	</resultMap>
+
+
+
+		<select id="getItemsById" resultType="ContractItem" parameterType="long">
+		select id,money,scale,payTime,isPayment from t_contractitem where contract_id=#{id}
+	</select>
+
+</mapper>

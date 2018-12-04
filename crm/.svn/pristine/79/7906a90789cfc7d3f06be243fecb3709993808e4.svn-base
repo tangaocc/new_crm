@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.SystemDictionaryItemMapper">
+
+	<!-- 保存 -->
+	<insert id="save" parameterType="SystemDictionaryItem" useGeneratedKeys="true" keyProperty="id">
+		insert into
+		t_systemdictionaryitem (name,requence,intro,parent_id) values(#{name},#{requence},#{intro},#{parent.id})
+	</insert>
+
+	<!-- 修改 -->
+	<update id="update" parameterType="SystemDictionaryItem">
+		update t_systemdictionaryitem set
+		name=#{name},requence=#{requence},intro=#{intro},parent_id=#{parent.id}
+		where id=#{id}
+	</update>
+
+	<!-- 删除 -->
+	<delete id="delete" parameterType="long">
+		delete from t_systemdictionaryitem
+		where
+		id=#{id}
+	</delete>
+
+	
+		 <!-- 查询有多少条 -->
+	<!--  <select id="queryPageCount" resultType="int">
+	 	select count(*) from t_department
+	 
+	 </select> -->
+	 
+	 	 <!-- 查询有多少条 -->
+	 <select id="getIdName" resultType="SystemDictionaryItem">
+	 	SELECT s.id,s.name FROM t_systemdictionaryitem s
+	 
+	 </select>
+	
+	<!-- 查询分页数据 -->
+	<!-- <select id="queryPageData"  resultMap="departmentMap" parameterType="DepartmentQuery">
+		select 
+			d.id,
+			d.sn,
+			d.name,
+			d.dirpath,
+			d.state,
+			e.id,
+			e.realName,
+			p.id pid,
+			p.name pName
+		from t_department d 
+		LEFT JOIN t_employee e ON d.manager_id=e.id
+		LEFT JOIN t_department p ON d.parent_id=p.id
+		limit #{start},#{rows}
+	</select>	 -->
+
+
+	<!-- 通过id获取 -->
+	<select id="loadById" resultType="SystemDictionaryItem" parameterType="long">
+		select id,name,requence,intro,parent_id from
+		t_systemdictionaryitem where id=#{id}
+
+	</select>
+
+	<!-- 获取所有 -->
+	<select id="loadAll" resultType="SystemDictionaryItem">
+		select id,name,requence,intro,parent_id from t_systemdictionaryitem
+	</select>
+
+	<!-- 通过查询条件或总的记录数 -->
+	<!-- Integer findTotal(BaseQuery baseQuery); -->
+	<select id="queryPageCount" resultType="int" parameterType="SystemDictionaryItemQuery">
+		select
+		count(o.id) from t_systemDictionaryItem o
+		<include refid="whereSql" />
+	</select>
+
+	<!-- 公共sql -->
+	<!-- 配置关联表数据 -->
+	<resultMap type="SystemDictionaryItem" id="systemDictionaryItemResultMap">
+		<!-- 配置当前类的简单属性 -->
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="requence" column="requence" />
+		<result property="intro" column="intro" />
+		<!-- 配置关联属性 -->
+		<association property="parent" javaType="SystemDictionary" column="parent_id">
+			<id property="id" column="parent_id" />
+			<result property="name" column="tname" />
+		</association>
+	</resultMap>
+
+	<select id="queryPageData" resultMap="systemDictionaryItemResultMap" parameterType="SystemDictionaryItemQuery">
+		select o.id,o.name,o.requence,o.intro,o.parent_id parent_id ,t.name tname
+		from t_systemdictionaryitem o
+		left join
+		t_systemdictionary t
+		on o.parent_id=t.id
+		<include refid="whereSql" />
+		limit #{start},#{rows}
+	</select>
+
+	<!-- 公共查询条件 -->
+	<sql id="whereSql">
+		<where>
+			<if test="q!=null and q!=''">
+				and (o.name like concat('%',#{q},'%'))
+			</if>
+			<if test="parentId!=null">
+				and o.parent_id=#{parentId}
+			</if>
+		</where>
+	</sql>
+ </mapper>

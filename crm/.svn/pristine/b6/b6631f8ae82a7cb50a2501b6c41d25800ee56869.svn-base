@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.RoleMapper">
+
+	<!-- 保存 -->
+	<insert id="save" parameterType="Role" 
+	useGeneratedKeys="true"  keyProperty="id" keyColumn="id">
+		insert into t_role (sn,name) values(#{sn},#{name})
+	</insert>
+
+
+
+
+	<!-- 修改 -->
+	<update id="update" parameterType="Role">
+		update t_role set sn=#{sn},name=#{name}
+		where id=#{id}
+	</update>
+
+	<!-- 删除 -->
+	<delete id="remove" parameterType="long">
+		delete from t_role
+		where
+		id=#{id}
+	</delete>
+	
+
+	<!-- 通过id获取 -->
+	<select id="loadById" resultType="Role" parameterType="long">
+		select id,sn,name from t_role where id=#{id}
+	</select>
+
+	<!-- 获取所有 -->
+	<select id="loadAll" resultType="Role">
+		select id,sn,name from t_role
+	</select>
+	
+	<!-- 通过查询条件或总的记录数 -->
+		<!-- 嵌套查询   这个是角色主页的权限展示-->
+	<select id="queryPageCount" resultType="int" parameterType="RoleQuery">
+		select
+		count(r.id) from t_role r
+		<include refid="roleWhereSql" />
+	</select>
+
+	<select id="queryPageData" resultMap="RoleMap">
+		select id,sn,name from t_role r
+		<include refid="roleWhereSql" />
+		LIMIT #{start},#{rows}
+	</select>	
+    <resultMap type="Role" id="RoleMap">
+       <!-- role的基本属性的封装 -->
+      <id column="id" property="id"/>
+      <result column="sn" property="sn"/>
+      <result column="name" property="name"/>
+       <!--
+		  // 角色和权限 多对多关系
+		  private List<Permission> permissions = new ArrayList<Permission>();
+		      嵌套查询进行封装这个属性：多发sql：select
+		   property="permissions":表示集合操作的是domain的那个属性
+		   javaType="list" ：表示Domain属性的类型
+		   ofType="Permission"：集合里的类型
+		   column="id"：查询的条件
+		   select="cn.itsource.crm.mapper.PermissionMapper.getPermsByRoleId"：
+		         定位到PermissionMapper的一个查询的sql:getPermsByRoleId
+		 -->
+	  <collection property="permissions" javaType="list" ofType="Permission" 
+	  		column="id" select="cn.tencent.crm.mapper.PermissionMapper.getPermsByRoleId"   >
+	  </collection>
+    
+    </resultMap>
+	<!-- 公共查询条件 -->
+	<sql id="roleWhereSql">
+		<where>
+			<if test="q!=null and q!=''">
+				and (r.name like concat('%',#{q},'%'))
+			</if>
+				
+		</where>
+	</sql>
+	
+	
+	
+	
+	<!-- 嵌套查询   这个是角色主页的权限展示-->
+	<resultMap type="Role" id="roleResultMap1">
+		<id column="id" property="id"/>
+		<result column="sn" property="sn"/>
+		<result column="name" property="name"/>
+		<collection property="permissions" javaType="arraylist" ofType="Permission" 
+		   column="id" select="cn.tencent.crm.mapper.PermissionMapper.findByRoleId"/>
+	</resultMap>
+	
+	<select id="findByQuery" resultMap="roleResultMap1">
+		select id,sn,name from t_role o
+		<include refid="roleWhereSql" />
+	</select>
+	
+	
+	
+	
+		<!-- 保存中间表：
+		void addRp(List<RolePermision> list);
+		// 保存中间表的操作
+		void saveRolePermission(List<Map<String, Long>> list);
+	
+	 -->
+	<!-- 保存中间表的操作 -->
+	<insert id="saveRolePermission" parameterType="list">
+		insert into  t_role_permission(role_id,permission_id)
+						values
+		<foreach item="item" index="index" collection="list"
+			separator="," >
+			(#{item.roleId},#{item.permissionId})
+		</foreach>
+	</insert>
+	<!-- 
+	   /**
+	 * 根据roleId删除中间表
+	 * @param roleId
+	 */
+	void deleteRpByRoleId(Serializable roleId);
+	-->
+	<delete id="deleteRpByRoleId" parameterType="long">
+		delete from t_role_permission where role_id = #{roleId}
+	</delete>
+	
+	
+	
+	
+	<!-- getRolesByEmpId -->
+	<select id="getRolesByEmpId" resultType="Role" parameterType="long">
+		select r.* from
+		t_employee_role er 
+		left join t_role r 
+		on r.id = er.role_id
+		where er.employee_id = #{id}
+	
+	</select>
+	
+	
+</mapper>

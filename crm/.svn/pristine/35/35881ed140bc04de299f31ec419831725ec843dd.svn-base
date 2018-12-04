@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.OrderMapper">
+
+
+	<!-- void save(T t); -->
+	<insert id="save" parameterType="Order">
+		insert into t_order(sn,customer_id,signTime,seller_id,sum,state,intro) 
+		values(#{sn},#{customer.id},#{signTime},#{seller.id},#{sum},#{state},#{intro})
+	</insert>
+
+	<!-- void update(T t); -->
+	<update id="update" parameterType="Order">
+		update t_order set 
+		sn = #{sn},customer_id=#{customer.id},signTime = #{signTime},seller_id = #{seller.id},sum = #{sum},intro = #{intro},state=#{state}
+		where id = #{id}
+	</update>
+
+
+	<!-- List<Order> loadAll(); -->
+	<select id="loadAll" parameterType="long" resultMap="OrderMap">
+		SELECT
+			o.id,
+			o.sn,
+			o.signTime,
+			o.sum,
+			o.state,
+			c.id cid,
+			c.name cname,
+			e.id eid,
+			e.realName
+		FROM
+			t_order o
+		LEFT JOIN
+			t_customer c on o.customer_id=c.id
+		LEFT JOIN
+			t_employee e on o.seller_id=e.id
+	</select>
+
+	<!--void remove(Serializable id); -->
+	<delete id="remove" parameterType="long">
+		delete from t_order where
+		id = #{id}
+	</delete>
+	<!-- T loadById(Serializable id); -->
+	<select id="loadById" parameterType="int" resultMap="OrderMap">
+		SELECT
+			o.id,
+			o.sn,
+			o.signTime,
+			o.sum,
+			o.state,
+			c.id cid,
+			c.name cname,
+			e.id eid,
+			e.realName,
+			h.id hid,
+			h.sn hsn
+		FROM
+			t_order o
+		LEFT JOIN
+			t_customer c on o.customer_id=c.id
+		LEFT JOIN
+			t_employee e on o.seller_id=e.id
+		LEFT JOIN
+			t_contract h on o.intro = h.id
+		where o.id=#{id}
+	</select>
+	<!-- 查询分页数据 -->
+	<select id="queryPageData"  resultMap="OrderMap" parameterType="OrderQuery">
+				SELECT
+			o.id,
+			o.sn,
+			o.signTime,
+			o.sum,
+			o.state,
+			c.id cid,
+			c.name cname,
+			e.id eid,
+			e.realName
+		FROM
+			t_order o
+		LEFT JOIN
+			t_customer c on o.customer_id=c.id
+		LEFT JOIN
+			t_employee e on o.seller_id=e.id
+		<include refid="whereSql"/>
+			limit #{start},#{rows}
+	</select>
+	<!-- 查询有多少条 -->
+	 <select id="queryPageCount" resultType="int">
+	 	select count(*) from t_order 
+	</select>
+	
+	<!-- 改变状态 -->
+	<update id="changeState" parameterType="Order">
+		update t_order set state=0 where id=#{id}
+	</update>
+	<sql id="whereSql">
+	<where>
+		  <if test="q!=null and q!=''">
+		  	and o.sn like concat("%",#{q},"%")
+		  </if>
+		 <if test="state != null and state!=-2">
+	  			and o.state = #{state}
+	  		</if>
+	  		<if test="signTime !=null and signTime !='' ">
+	  			and o.signTime = #{signTime}
+	  		</if>
+	  		<if test="customerId !=null and customerId !='' ">
+	  			and o.customer_id = #{customerId}
+	  		</if>
+	  		<if test="sellerId !=null and sellerId !='' ">
+	  			and o.seller_id = #{sellerId}
+	  		</if>
+	  		
+	  		
+	  		
+	  		
+	  	</where>
+	 </sql>
+	 
+	<resultMap type="Order" id="OrderMap">
+		<id column="id" property="id"/>
+		<result column="sn" property="sn"/>
+		<result column="signTime" property="signTime"/>
+		<result column="sum" property="sum"/>
+		<result column="state" property="state"/>
+		<result column="intro" property="intro"/>
+		<association property="customer" javaType="Customer">
+			<id column="cid" property="id"/>
+			<result column="cname" property="name"/>
+		</association>
+		<association property="seller" javaType="Employee">
+			<id column="eid" property="id"/>
+			<result column="realName" property="realName"/>
+		</association>
+		<!-- 处理一方:contract  -->
+		<association property="contract" javaType="Contract">
+			<id property="id" column="hid" />
+			<result property="sn" column="hsn" />
+		</association>
+	</resultMap>
+</mapper>

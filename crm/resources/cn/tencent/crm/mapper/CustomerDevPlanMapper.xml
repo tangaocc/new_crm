@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.CustomerDevPlanMapper">
+	<!-- void save(T t); -->
+	<insert id="save" parameterType="CustomerDevPlan">
+		insert into t_customerdevplan(planTime,planSubject,planDetails,inputTime,planType_id,potentialCustomer_id,inputUser_id)
+		values(#{planTime},#{planSubject},#{planDetails},#{inputTime},#{planType.id},#{potentialCustomer.id},#{inputUser.id})
+	</insert>
+
+	<!-- void update(T t);
+	planTime,planSubject,planDetails,inputTime,planType_id,customerDevPlan_id,inputUser_id
+	-->
+	<update id="update" parameterType="CustomerDevPlan">
+		update t_customerdevplan set 
+		planTime=#{planTime} ,
+		planSubject=#{planSubject},
+		planDetails=#{planDetails}, 
+		inputTime=#{inputTime}, 
+		planType_id=#{planType.id}, 
+		potentialCustomer_id=#{potentialCustomer.id}, 
+		inputUser_id=#{inputUser.id} 
+		where id=#{id}
+	</update>
+
+
+	<!-- List<CustomerDevPlan> loadAll(); -->
+	<select id="loadAll" resultType="CustomerDevPlan">
+		select * from t_customerdevplan
+	</select>
+	
+	<!-- T loadById(Serializable id); -->
+	
+	<select id="loadById" parameterType="long" resultType="CustomerDevPlan">
+		select * from t_customerdevplan where id=#{id}
+	</select>
+	
+
+	<!--void remove(Serializable id); -->
+	<delete id="remove" parameterType="long">
+		delete from t_customerdevplan where
+		id = #{id}
+	</delete>
+	
+	<!-- 查询有多少条 -->
+	<select id="queryPageCount" resultType="int">
+		select count(*) from
+		t_customerdevplan c
+		<include refid="wheresql"/>
+	</select>
+	
+	
+	 
+	<!-- 查询分页数据 -->
+	<select id="queryPageData" resultMap="customerDevPlanMap"
+		parameterType="CustomerDevPlanQuery">
+		SELECT
+		c.*,
+		s.id sID,
+		s.name sName,
+		p.id pId,
+		p.name pName, 
+		e.id eId,
+		e.realName eName
+		from t_customerdevplan c
+		LEFT JOIN t_systemdictionaryitem s on c.planType_id=s.id
+		LEFT JOIN t_potentialcustomer p on c.potentialCustomer_id=p.id
+		LEFT JOIN t_employee e on c.inputUser_id=e.id 
+		<include refid="wheresql"/>
+		limit
+		#{start},#{rows}
+
+	</select>
+	
+	<sql id="wheresql">
+		<where>
+			<if test="q !=null and q!=''">
+				and (c.planSubject like concat("%",#{q},"%"))
+			</if>
+			
+     		<if test="planTypeId != null and planTypeId!=''" >
+     		  and (c.planType_id = #{planTypeId})
+     		</if>
+     		
+     		<if test="inputUserId !=null and inputUserId!=''">
+     		  and (c.inputUser_id = #{inputUserId})
+     		</if>
+     		<if test="potentialCustomerId != null and potentialCustomerId !=''">
+     		  and (p.potentialCustomer_id = #{potentialCustomerId})
+     		</if>
+     		
+		</where>
+	</sql>
+	<!-- private SystemDictionaryItem customerSource;//数据字典合拼 //创建人 自动填入当前登录用户，用户不可更改 
+		输入框只读 必填 private Integer state=1;
+	planTime,planSubject,planDetails,inputTime,planType_id,customerDevPlan_id,inputUser_id	
+	-->
+	<resultMap type="CustomerDevPlan" id="customerDevPlanMap">
+		<id column="id" property="id" />
+		<result column="planTime" property="planTime" />
+		<result column="planSubject" property="planSubject" />
+		<result column="planDetails" property="planDetails" />
+		<result column="inputTime" property="inputTime" />
+		<association property="planType" javaType="SystemDictionaryItem">
+			<id column="sId" property="id" />
+			<result column="sName" property="name" />
+		</association>
+		<association property="potentialCustomer" javaType="PotentialCustomer">
+			<id column="pId" property="id" />
+			<result column="pName" property="name" />
+		</association>
+		<association property="inputUser" javaType="Employee">
+			<id column="eId" property="id" />
+			<result column="eName" property="realName" />
+		</association>
+
+
+	</resultMap>
+
+</mapper>

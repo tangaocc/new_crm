@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns:context="http://www.springframework.org/schema/context"
+xmlns:mvc="http://www.springframework.org/schema/mvc"
+xmlns:tx="http://www.springframework.org/schema/tx"
+xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.1.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.1.xsd"
+>
+	
+	<!-- spring的配置文件  不能管理springmvc的Bean  视图解析器，HandlerMapping -->
+	
+	<!-- 
+		Spring+JPA  :  Spring提供了一个spring-orm.jar
+		DataSource->EntityManagerFactory   
+		Spring+Mybatis  :  Spring没有提供整合的jar包，mybatis提供的  mybatis-spring.jar
+		DataSource -> SqlSessionFactory -> SqlSession -> Mapper
+	 -->
+	 <import resource="classpath:applicationContext-shiro.xml"/>
+	 
+	 <!-- spring扫描的包   service  -->
+	 <context:component-scan base-package="cn.tencent.crm.service"/>
+	 
+	 <!-- 引入属性文件 -->
+	 <context:property-placeholder location="classpath:db.properties"/>
+	 
+	 <!-- 配置数据源    DataSource -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+	    <property name="driverClassName" value="${db.driver}" />
+	    <property name="url" value="${db.url}" />
+	    <property name="username" value="${db.username}" />
+	    <property name="password" value="${db.password}" />
+	    <!-- 其他属性的配置 -->
+	</bean>
+
+	<!-- 配置SqlSessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!-- 配置别名 -->
+		<property name="typeAliasesPackage" value="cn.tencent.crm.domain,cn.tencent.crm.query"></property>
+		<!-- 配置映射文件 -->
+		<property name="mapperLocations" value="classpath:cn/tencent/crm/mapper/*Mapper.xml"></property>
+	</bean>
+	
+	
+	<!-- 创建映射器对象交给spring管理 -->
+<!-- 	<bean id="userMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="cn.tencent.ssm.mapper.UserMapper" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean> -->
+	
+	<!-- 一劳永逸的做法  所有的mapper接口创建代理对象交给spring管理 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- mapper接口所在的包 -->
+		<property name="basePackage" value="cn.tencent.crm.mapper" />
+	</bean>
+	
+	
+	<!-- 
+		事务管理：
+			声明式事务管理
+			注解式事务管理
+	 -->
+	 <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	 	<property name="dataSource" ref="dataSource"></property>
+	 </bean>
+	 
+	 <!-- 开启注解式事务管理 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+
+	
+	
+	
+	<!-- 系统日志aop配置 -->
+   <aop:config>
+		<aop:pointcut id="crm" 
+		expression="execution(* cn.tencent.crm.service.I*service.*(..))" />
+		<aop:aspect ref="SystemLogUtils">
+			<aop:after-returning method="writeLog" pointcut-ref="crm"/>
+		</aop:aspect>
+	</aop:config>  
+	<!-- 配置service层 -->
+	<bean id="logService" class="cn.tencent.crm.service.impl.SystemLogServiceImpl"></bean>
+	
+	 <bean id="SystemLogUtils" class="cn.tencent.crm.util.SystemLogUtils">
+	 	<property name="logService" ref="logService"></property>
+	 </bean>
+
+</beans>

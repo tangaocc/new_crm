@@ -1,0 +1,28 @@
+package cn.tencent.crm.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import cn.tencent.crm.domain.Customer;
+import cn.tencent.crm.mapper.CustomerMapper;
+import cn.tencent.crm.service.ICustomerService;
+@Service
+public class CustomerServiceImpl extends BaseServiceImpl<Customer> 
+implements ICustomerService{
+	@Autowired
+	private CustomerMapper customerMapper;
+	@Override
+	public void changeState(Customer custate) {
+		customerMapper.changeState(custate);
+	}
+	@Override
+	public List<Long> getCusSourceId() {
+		List<Long> list = customerMapper.getCustomerSourceId();
+		return list;
+	}
+		
+	
+
+}

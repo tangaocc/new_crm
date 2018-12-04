@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.PermissionMapper">
+	
+	<!-- 保存员工 -->
+	<insert id="save" parameterType="Permission" useGeneratedKeys="true"
+		keyProperty="id" keyColumn="id">
+		insert into
+		t_permission(name,sn,resource,state)
+		values(#{name},#{sn},#{resource},#{state})
+	</insert>
+	<!-- 修改员工 -->
+	<update id="update" parameterType="Permission">
+		update t_permission set
+		name=#{name},sn=#{sn},resource=#{resource},state=#{state}
+		where id=#{id}
+	</update>
+	<!-- 删除 -->
+ 	<delete id="remove" parameterType="long">
+ 		delete from t_permission where id=#{id}
+ 	</delete>
+
+	 
+	<select id="loadById" parameterType="long" resultType="Permission">
+		select * from
+		t_permission where id = #{id}
+	</select>
+	<!-- 获取所有员工 -->
+	<select id="loadAll" resultType="Permission">
+		select *
+		 from t_permission
+	</select>
+
+ <!-- 查询有多少条 -->
+	<select id="queryPageCount" resultType="int">
+	  select count(*) from t_permission
+	</select>
+	<!-- 查询数据 -->
+	<select id="queryPageData" resultType="Permission" parameterType="PermissionQuery">
+	   <!-- 现在我们页面需要的是Permission对象里的基本属性，直接使用resultType接收就行了， -->
+	    select * from t_permission p
+	     <!-- 通过q进行模糊匹配
+	     使用$，容易出现sql注入，应该避免：username like '%${q}%'
+	       select * from t_employee where username like '%12%' LIMIT ?,? 
+	  使用#，要出错：username like '%#{q}%'
+	 使用拼接函数：concat:
+	    mysql和oracle的concat的区别：
+	        oracle：只能2个参数的拼接
+	        mysql：可以多个进行拼接
+	      -->
+	   <!-- where username like concat("%",#{q},"%") 
+	        or  realName like concat("%",#{q},"%")
+		    or email like concat("%",#{q},"%") -->
+		<include refid="whereSql"/>
+		LIMIT #{start},#{rows}
+	</select>
+	<sql id="whereSql">
+		<where>
+			<if test="q!=null and q!=''">
+				and (p.name like concat("%",#{q},"%") or p.sn like concat("%",#{q},"%"))
+			</if>
+			<if test="state != null and state!=-2">
+	  			and p.state = #{state}
+	  		</if>
+	  		<if test="resource != null and resource != ''">
+	  			and p.resource =#{resource}
+	  		</if> 
+	  		
+	  		
+	  		
+	  		
+		</where>
+	
+	</sql>
+
+
+
+	<!-- 根据通过角色ID查询相应的权限 -->
+	<select id="getPermsByRoleId" parameterType="Role" resultType="Permission">
+		select p.* from t_permission p 
+		left join t_role_permission rp on rp.permission_id = p.id
+		left join t_role r on rp.role_id = r.id
+		where r.id=#{id} 
+	
+	</select>
+	<!-- findByRoleId -->
+	
+	
+	
+	
+	<!-- 根据角色查询相应的权限 -->
+	<select id="loadPermissionByRole" parameterType="Role" resultType="Permission">
+		SELECT
+			p.*
+		FROM
+			t_permission p
+		JOIN t_role_permission rp ON p.id = rp.permission_id
+		JOIN t_role r ON r.id = rp.role_id
+		WHERE r.id = #{id}
+	</select>
+	
+	<!-- 根据员工的id查询对应的权限 -->
+	
+	<select id="findPermissionByLoginUserId" parameterType="long" resultType="Permission">
+		SELECT
+			p.*
+		FROM
+			t_employee e
+		JOIN t_employee_role er ON e.id = er.employee_id
+		JOIN t_role r ON r.id = er.role_id
+		JOIN t_role_permission rp ON r.id = rp.role_id
+		JOIN t_permission p ON p.id = rp.permission_id
+		WHERE
+			e.id = #{id}
+	</select>
+<!-- 批量保存权限 -->
+	<insert id="loadPermissionResource" parameterType="java.util.List">
+		insert into t_permission(sn,name,resource,state)
+		values
+		<foreach collection="list" index="index" item="perms"
+			separator=",">
+			(#{perms.sn},#{perms.name},#{perms.resource},#{perms.state})
+		</foreach>
+	</insert>
+	
+	
+	<!-- 批量删除    这里只在批量注解时临时使用！！！！！！！！！！！！！！！！！！！！！！！-->
+	<delete id="deleteAll" >
+		delete from t_permission
+	</delete>
+
+</mapper> 

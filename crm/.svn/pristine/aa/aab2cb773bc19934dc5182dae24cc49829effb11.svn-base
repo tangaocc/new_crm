@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 这个Mapper的主要功能就是写sql mapper:根 namespace:命令空间 (用来确定唯一) 以前这个是可以不加的,现在必需加 
+	namespace的值，规则的：映射文件XxxMapper.xml所在的包+domain类名+Mapper -->
+<mapper namespace="cn.tencent.crm.mapper.SystemMenuMapper">
+	
+	<resultMap type="SystemMenu" id="SystemMenuMap">
+		<id column="id" property="id"/>
+		<result column="sn" property="sn"/>
+		<result column="name" property="name"/>
+		<result column="icon" property="icon"/>
+		<result column="url" property="url"/>
+		<result column="intro" property="intro"/>
+		<association property="parent" column="parent_id" javaType="SystemMenu">
+				<id column="pid"  property="id"/>
+				<result column="pname" property="name"/>
+		</association>
+	
+	</resultMap>	
+	
+	<insert id="save" parameterType="SystemMenu">
+		insert into t_systemmenu(sn,name,icon,url,intro,parent_id) values(#{sn},#{name},#{icon},#{url},#{intro},#{parent.id})
+	</insert>
+	<delete id="remove" parameterType="long" >
+		delete from t_systemmenu where id=#{id}
+	</delete>   
+	
+	<update id="update" parameterType="SystemMenu">
+		update t_systemmenu set name=#{name},sn=#{sn},icon=#{icon},url=#{url},intro=#{intro},parent_id=#{parent.id} where id=#{id}
+	</update> 
+				
+	
+	<select id="loadById" parameterType="long" resultType="SystemMenu">
+		select id,name from t_systemmenu where id=#{id}
+	</select>
+	 
+	<select id="loadAll" resultType="SystemMenu">
+		select * from t_systemmenu
+	</select>
+	<!-- 根据登录用户得到菜单 -->
+	 <select id="findMenuByLoginUserId" resultMap="menuMap" parameterType="long">
+		SELECT DISTINCT
+			parent.id,
+			parent.name,
+			s.id sid,
+			s.name sname,
+			s.url,
+			s.icon
+		FROM
+			t_employee e
+		LEFT JOIN t_employee_role er ON e.id = er.employee_id
+		LEFT JOIN t_role r ON r.id = er.role_id
+		LEFT JOIN t_role_permission rp ON r.id = rp.role_id
+		LEFT JOIN t_permission p ON p.id = rp.permission_id
+		JOIN t_systemmenu s ON p.menu_id = s.id
+		LEFT JOIN t_systemmenu parent ON parent.id = s.parent_id
+		WHERE
+			e.id = #{id}
+			order by parent.id
+	</select>
+	<!-- 封装数据:父部门和子部门 -->
+	<resultMap type="SystemMenu" id="menuMap">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		
+		<collection property="children" ofType="SystemMenu" javaType="arrayList">
+			<id column="sid" property="id"/>
+			<result column="sname" property="name"/>
+			<result column="url" property="url"/>
+			<result column="icon" property="icon"/>
+		</collection>
+	</resultMap>
+	<!-- 根据登录用户得到菜单 -->
+	<!-- <select id="findMenuByLoginUserId" resultMap="menuMap" parameterType="long">
+	 select distinct 
+ 
+	 	m.id,
+	     m.sn,
+		 m.name,
+		 m.icon,
+		 m.url,
+		 mp.id mpId,
+	     mp.sn mpSn,
+		 mp.name mpName,
+		 mp.icon mpIcon,
+		 mp.url mpUrl
+	 from
+		t_employee e
+		LEFT JOIN t_employee_role er on e.id = er.employee_id
+		LEFT JOIN t_role r on  r.id = er.role_id
+		LEFT JOIN t_role_permission rp ON r.id = rp.role_id
+		LEFT JOIN t_permission p on p.id = rp.permission_id
+		LEFT JOIN t_systemmenu m  on m.id = p.menu_id
+		LEFT JOIN t_systemmenu mp on m.parent_id = mp.id
+	WHERE
+			e.id = #{id}
+			order by mp.id
+	
+	</select>
+	<resultMap type="SystemMenu" id="menuMap">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		
+		<collection property="children" ofType="SystemMenu" javaType="arrayList">
+			<id column="id" property="id"/>
+			<result column="name" property="name"/>
+			<result column="url" property="url"/>
+			<result column="icon" property="icon"/>
+		</collection>
+	</resultMap> -->
+	
+	
+	<!-- 根据登录用户得到菜单 -->
+	<!--  <select id="findMenuByLoginUserId" resultMap="menuMap" parameterType="long">
+		SELECT DISTINCT
+			parent.id,
+			parent. NAME,
+			s.id sid,
+			s. NAME sname,
+			s.url,
+			s.icon
+		FROM
+			t_employee e
+		JOIN t_employee_role er ON e.id = er.employee_id
+		JOIN t_role r ON r.id = er.role_id
+		JOIN t_role_permission rp ON r.id = rp.role_id
+		JOIN t_permission p ON p.id = rp.permission_id
+		JOIN t_systemmenu s ON p.menu_id = s.id
+		JOIN t_systemmenu parent ON parent.id = s.parent_id
+		WHERE
+			e.id = #{id}
+			order by parent.id
+	</select> -->
+	<!-- 封装数据:父部门和子部门 -->
+<!-- 	<resultMap type="SystemMenu" id="menuMap">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		
+		<collection property="children" ofType="SystemMenu" javaType="arrayList">
+			<id column="sid" property="id"/>
+			<result column="sname" property="name"/>
+			<result column="url" property="url"/>
+			<result column="icon" property="icon"/>
+		</collection>
+	</resultMap>
+	 -->
+	
+	 <select id="queryPageCount" resultType="int" parameterType="SystemMenuQuery">
+		select count(*)  from t_systemmenu s
+		<include refid="whereSql"/>
+	</select>
+	
+	
+	
+	<select id="queryPageData" resultType="SystemMenu" resultMap="SystemMenuMap">
+		select  
+		s.id,s.sn,s.name,s.icon,s.url,s.intro,p.id pid,p.name pname 
+		from t_systemmenu s 
+		left join t_systemmenu p  
+		on s.parent_id =p.id 
+		
+		<include refid="whereSql"/>
+		
+		limit #{start} ,#{rows}
+		
+	</select>  
+	
+	
+	<sql id="whereSql">
+		<where>
+				<if test="q!=null and q!=''">
+					and (s.name like concat("%",#{q},"%"))
+				</if>
+		</where>	
+	</sql>
+</mapper> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

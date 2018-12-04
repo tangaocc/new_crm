@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.EmployeeMapper">
+
+	<resultMap type="employee" id="employeeMap">
+		<id property="id" column="id" />
+		<result property="username" column="username" />
+		<result property="password" column="password" />
+		<result property="realName" column="realName" />
+		<result property="tel" column="tel" />
+		<result property="email" column="email" />
+		<result property="inputTime" column="inputTime" />
+		<result property="state" column="state" />
+		<!-- dept pojo -->
+		<association property="department" javaType="department">
+			<id property="id" column="did" />
+			<result property="name" column="dname"/>
+			<result property="sn" column="dsn"/>
+		</association>
+		<!-- role pojo -->
+		<collection property="roles" javaType="list" ofType="role"  column="id" select="getRolesByEmpId">
+		</collection>
+	</resultMap>
+	<!-- 根据员工的id拿到对应的角色进行嵌套查询 -->
+	<select id="getRolesByEmpId" parameterType="long" resultType="Role">
+		SELECT
+			r.*
+		FROM
+			t_employee_role er
+		JOIN t_role r ON er.role_id = r.id
+		WHERE er.employee_id=#{id}
+	</select>
+	<!-- void save(T t); -->
+	<insert id="save" parameterType="Employee" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+		insert into
+		t_employee(username,password,realName,tel,email,inputTime,state,department_id)
+		values(#{username},#{password},#{realName},#{tel},#{email},#{inputTime},#{state},#{department.id})
+	</insert>
+	
+
+
+	<!-- void update(T t); -->
+	<update id="update" parameterType="Employee">
+		update t_employee set
+		username
+		=#{username},
+		password =#{password},
+		realName =#{realName},
+		tel =#{tel},
+		email =#{email},
+		inputTime =#{inputTime},
+		state =#{state},
+		department_id
+		=#{department.id}
+		where id = #{id}
+	</update>
+	<!--void remove(Serializable id); -->
+	<delete id="remove" parameterType="long">
+		delete from t_employee where
+		id = #{id}
+	</delete>
+
+	<!-- List<Employee> loadAll(); -->
+	<select id="loadAll" resultType="Employee">
+		select * from t_employee
+	</select>
+	<select id="loadById" parameterType="long" resultType="Employee">
+		select * from
+		t_employee where id = #{id}
+	</select>
+	
+	
+	
+
+
+	<!-- void leave(Long id);
+	  员工离职
+	 -->
+	<update id="leave" parameterType="long">
+	   update t_employee set state=-1 where id =#{id}
+	</update>
+
+
+ 
+	
+	<!-- 查询总数 -->
+	<select id="queryPageCount" resultType="int" parameterType="employeeQuery">
+		select count(*) from t_employee e
+		<include refid="whereSql"/>
+
+	</select>
+
+	<!-- 查询数据 -->
+	<select id="queryPageData" resultMap="employeeMap" parameterType="EmployeeQuery">
+	   <!-- 现在我们页面需要的是Employee对象里的基本属性，直接使用resultType接收就行了， -->
+	   <!-- e.*,d.id did,d.name dname -->
+	    SELECT
+		e.*, d.id did,d.name dname,d.sn dsn
+		FROM
+		t_employee e
+		LEFT JOIN
+		t_department d ON e.department_id = d.id
+		<include refid="whereSql"/>
+		limit #{start},#{rows}
+	    <!-- select * from t_employee -->
+	     <!-- 通过q进行模糊匹配
+	     使用$，容易出现sql注入，应该避免：username like '%${q}%'
+	       select * from t_employee where username like '%12%' LIMIT ?,? 
+	  使用#，要出错：username like '%#{q}%'
+	 使用拼接函数：concat:
+	    mysql和oracle的concat的区别：
+	        oracle：只能2个参数的拼接
+	        mysql：可以多个进行拼接
+	      -->
+	  <!--  where username like concat("%",#{q},"%") 
+	        or  realName like concat("%",#{q},"%")
+		    or email like concat("%",#{q},"%") -->
+		<!-- LIMIT #{start},#{rows} -->
+
+</select>
+	<!-- 抽取公共Sql -->
+		<sql id="whereSql">	
+		<where>
+			<if test="q != null and q != ''">
+			  and (e.username like concat("%",#{q},"%") or e.realName like  concat("%",#{q},"%")or e.tel like  concat("%",#{q},"%")or e.email like  concat("%",#{q},"%"))
+			</if>
+			<if test="beginDate != null and beginDate !=''">
+			  and (e.inputTime <![CDATA[>=]]>#{beginDate})
+			</if>
+			<if test="endDate != null and endDate != ''">
+			  and (e.inputTime <![CDATA[<=]]>#{endDate})
+			</if>
+			<if test="state != -2">
+			  and e.state = #{state}
+			</if>
+			<if test="deptId != null ">
+			  and e.department_id = #{deptId}
+			</if>
+		</where>
+	</sql>
+	<!-- 查询分页数据 -->
+	<!-- <select id="queryPageRows" resultType="employee" parameterType="employeeQuery"> 
+		select * from t_employee limit #{start},#{rows} </select> -->
+
+
+	
+	<!-- 
+	
+
+	
+		保存中间表的操作
+	<insert id="saveEmployeeRole" parameterType="list">
+		insert into  t_role_permission(role_id,employeeId)
+						values
+		<foreach item="er" index="index" collection="list"
+			separator="," >
+			(#{er.roleId},#{er.employeeId})
+		</foreach>
+	</insert>
+	
+	   /**
+	 * 根据roleId删除中间表
+	 * @param roleId
+	 */
+	void deleteRpByRoleId(Serializable roleId);
+	
+	<delete id="deleteErByEmployeeId" parameterType="long">
+		delete from t_employee_role where role_id = #{employeeId}
+	</delete> -->
+
+
+	
+	<resultMap type="Employee" id="queryPageDataMap">
+		<id column="id" property="id"/>
+		<result column="username"  property="username" />
+		<result column="realName"  property="realName" />
+		<result column="tel"  property="tel" />
+		<result column="state"  property="state" />
+		<association property="department" javaType="Department">
+			<id column="id"  property="id"/>
+			<result column="name"  property="name" />
+			<!-- <result column="dept" property="dept"/> -->
+		</association>
+		
+	</resultMap>
+	
+	
+	<!-- 保存中间表的操作:这里是批量插入; -->
+	<insert id="saveEmployeeRole" parameterType="list">
+		insert into  t_employee_role(employee_id,role_id)
+						values
+		<foreach item="item" index="index" collection="list"
+			separator="," >
+			(#{item.employeeId},#{item.roleId})
+		</foreach>
+	</insert>
+	
+	<!--批量删除  根据员工id,把该员工对应的所有角色全部删除了 -->
+	<delete id="removeEmployeeRole" parameterType="long">
+		delete from t_employee_role where employee_id=#{id}
+	</delete>
+	
+
+
+	<!-- 
+		//登录方法  !!!!!!!!!!加上了客户模块权限控制
+		public Employee loadByUsername(String username); 
+		Employee loadByUserName(String username); 
+			为了兼容客户模块权限控制，还要获取用户所对应的角色
+	-->
+	<select id="loadByUsername" parameterType="string" resultMap="employeeRoleMap">
+	
+	SELECT DISTINCT
+		e.*,r.id rid,r.sn
+		FROM
+		t_employee e
+		LEFT JOIN t_employee_role er ON er.employee_id = e.id
+		LEFT JOIN t_role r ON er.role_id = r.id
+		
+		where username=#{username}
+	</select>
+	<!-- 多对多嵌套结果 -->
+	<resultMap type="Employee" id="employeeRoleMap">
+		<!-- 一方 -->
+		<id property="id" column="id"/>
+		<result property="username" column="username"/>
+		<result property="realName" column="realName"/>
+		<result property="password" column="password"/>
+		<result property="tel" column="tel"/>
+		<result property="email" column="email"/>
+		<result property="state" column="state"/>
+		<!-- 多方 -->
+		<!-- List<Role> roles = new ArrayList<>(); -->
+		<collection property="roles" javaType="arrayList" ofType="Role">
+			<id property="id" column="rid"/>
+			<result property="sn" column="sn"/>
+		</collection>
+	
+	
+	</resultMap>
+
+
+</mapper> 
+
+

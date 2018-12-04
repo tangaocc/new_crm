@@ -1,0 +1,91 @@
+[{    
+    "id": 1,    
+    "text": "系统管理",    
+    "state": "open",    
+    "children": [{    
+        "id": 11,    
+        "text": "员工管理",
+        "iconCls":"icon-add" ,
+        "url":"/employee/index" 
+    },{    
+        "id": 12,    
+        "text": "部门管理" ,
+        "iconCls":"icon-edit"  ,
+        "url":"/department/index"  
+    },{    
+        "id": 13,    
+        "text": "数据字典" ,
+        "iconCls":"icon-edit"  ,
+        "url":"/systemdictionary/index"  
+    },{    
+        "id": 15,    
+        "text": "角色" ,
+        "iconCls":"icon-edit"  ,
+        "url":"/role/index"  
+    },{    
+        "id": 16,    
+        "text": "权限管理" ,
+        "iconCls":"icon-lock"  ,
+        "url":"/permission/index"  
+    },{    
+        "id": 17,    
+        "text": "菜单管理" ,
+        "iconCls":"icon-ok"  ,
+        "url":"/systemMenu/index"  
+    }]    
+},{    
+    "id": 2,    
+    "text": "客户管理",    
+   "state": "closed", 
+    "children": [{    
+        "id": 21,    
+         "iconCls":"icon-man",
+        "text": "正式客户",
+        "url":"/customer/index"   
+    },{    
+        "id": 22,  
+         "iconCls":"icon-man",  
+        "text": "客户跟进历史",
+        "url":"/customerTraceHistory/index"   
+    },{    
+        "id": 23,  
+        "iconCls":"icon-man",  
+        "text": "客户移交记录",
+        "url":"/customerTransfer/index"   
+    },{    
+        "id": 24,  
+        "iconCls":"icon-man",  
+        "text": "客户资源池",
+        "url":"/customer/indexs"   
+    }]  
+},{
+	"id": 3,    
+    "text": "营销管理",    
+    "state": "closed",    
+    "children": [{    
+		"id": 31,  
+        "iconCls":"icon-man",  
+        "text": "潜在客户",
+        "url":"/potentialCustomer/index" 
+	},{    
+        "id": 32,  
+        "iconCls":"icon-man",  
+        "text": "客户开发计划",
+        "url":"/customerDevPlan/index"   
+    }]      
+},{    
+    "id": 4,    
+    "text": "订单合同管理",    
+    "state": "closed",    
+    "children": [{    
+        "id": 41,    
+         "iconCls":"icon-man",
+        "text": "订单管理",
+        "url":"/order/index"    
+    },{    
+        "id": 42,  
+         "iconCls":"icon-man",  
+        "text": "合同管理",
+        "url":"/contract/index"   
+    }]  
+}]

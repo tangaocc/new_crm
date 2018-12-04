@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.CustomerTransferMapper">
+	<!-- void save(T t); -->
+	<insert id="save" parameterType="CustomerTransfer">
+		insert into t_customertransfer(transTime,transReason,customer_id,transUser_id,oldSeller_id,newSeller_id)
+		values(#{transTime},#{transReason},#{customer.id},#{transUser.id},#{oldSeller.id},#{newSeller.id})
+	</insert>
+
+	<!-- void update(T t); -->
+	<update id="update" parameterType="CustomerTransfer">
+		update t_customertransfer set 
+		transTime=#{transTime}, 
+		transReason=#{transReason}, 
+		customer_id=#{customer.id} ,
+		transUser_id=#{transUser.id}, 
+		oldSeller_id=#{oldSeller.id}, 
+		newSeller_id=#{newSeller.id} 
+		where id=#{id}
+	</update>
+
+
+	<!-- List<CustomerTransfer> loadAll(); -->
+	<select id="loadAll" resultType="CustomerTransfer">
+		select * from t_customertransfer
+	</select>
+	
+	<!-- T loadById(Serializable id); -->
+	
+	<select id="loadById" parameterType="long" resultType="CustomerTransfer">
+		select * from t_customertransfer where id=#{id}
+	</select>
+	
+
+	<!--void remove(Serializable id); -->
+	<delete id="remove" parameterType="long">
+		delete from t_customertransfer where
+		id = #{id}
+	</delete>
+	
+	<!-- 查询有多少条 -->
+	<select id="queryPageCount" resultType="int">
+		select count(*) from
+		t_customertransfer c
+		<include refid="wheresql"/>
+	</select>
+	
+	
+	 
+	<!-- 查询分页数据 -->
+	<select id="queryPageData" resultMap="customerTransferMap"
+		parameterType="CustomerTransferQuery">
+		SELECT
+		c.*,
+		u.id uId,
+		u.name uName,
+		e.id eId,
+		e.realName eName,
+		m.id mID,
+		m.realname mName,
+		p.id pId,
+		p.realname pName 
+		from t_customertransfer c
+		LEFT JOIN t_customer u on c.customer_id=u.id
+		LEFT JOIN t_employee e on c.transUser_id=e.id 
+		LEFT JOIN t_employee m on c.oldSeller_id=m.id 
+		LEFT JOIN t_employee p on c.newSeller_id=p.id 
+		<include refid="wheresql"/>
+		limit
+		#{start},#{rows}
+
+	</select>
+	
+	<sql id="wheresql">
+		<where>
+			<if test="q !=null and q!=''">
+				and (c.transReason like concat("%",#{q},"%"))
+			</if>
+     		<if test="oldSellerId !=null and oldSellerId!=''">
+     		  and (c.oldSeller_id = #{oldSellerId})
+     		</if>
+     		<if test="newSellerId !=null and newSellerId!=''">
+     		  and (c.newSeller_id = #{newSellerId})
+     		</if>
+     		<if test="transUserId !=null and transUserId!=''">
+     		  and (c.transUser_id = #{transUserId})
+     		</if>
+     		<if test="customerId != null and customerId !=''">
+     		  and (c.customer_id = #{customerId})
+     		</if>
+     		
+		</where>
+	</sql>
+	<!-- private SystemDictionaryItem customerSource;//数据字典合拼 //创建人 自动填入当前登录用户，用户不可更改 
+		输入框只读 必填 private Integer state=1;
+		transTime,transReason,customer_id,transUser_id,oldSeller_id,newSeller_id
+	-->
+	<resultMap type="CustomerTransfer" id="customerTransferMap">
+		<id column="id" property="id" />
+		<result column="transTime" property="transTime" />
+		<result column="transReason" property="transReason" />
+		<association property="customer" javaType="Customer">
+			<id column="uId" property="id" />
+			<result column="uName" property="name" />
+		</association>
+		<association property="transUser" javaType="Employee">
+			<id column="eId" property="id" />
+			<result column="eName" property="realName" />
+		</association>
+		<association property="oldSeller" javaType="Employee">
+			<id column="mId" property="id" />
+			<result column="mName" property="realName" />
+		</association>
+		<association property="newSeller" javaType="Employee">
+			<id column="pId" property="id" />
+			<result column="pName" property="realName" />
+		</association>
+
+
+	</resultMap>
+
+</mapper>

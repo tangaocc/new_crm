@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.DepartmentMapper">
+
+<resultMap type="department" id="departmentMap">
+<id property="id" column="id"/>
+<result property="sn" column="sn"/>
+<result property="name" column="name"/>
+<result property="dirPath" column="dirPath"/>
+<result property="state" column="state"/>
+<!-- manager pojo -->
+<association property="manager" javaType="employee">
+<id property="id" column="eid"/>
+<result property="realName" column="realName"/>
+</association>
+<!-- parent pojo -->
+<association property="parent" javaType="department">
+<id property="id" column="tid"/>
+<result property="name" column="tname"/>
+</association>
+</resultMap>
+
+
+	<!-- void save(T t); -->
+	<!-- 保存部门 -->
+	<insert id="save" parameterType="Department" useGeneratedKeys="true"
+		keyProperty="id" keyColumn="id">
+		insert into
+		t_department(sn,name,manager_id,parent_id,dirPath,state)
+		values(#{sn},#{name},#{manager.id},#{parent.id},#{dirPath},#{state})
+	</insert>
+	<!-- void update(T t); -->
+	<!-- 修改部门 -->
+	<update id="update" parameterType="Department">
+		update t_department set
+		sn=#{sn},name=#{name},manager_id=#{manager.id},
+		parent_id=#{parent.id},dirPath=#{dirPath},state=#{state}
+		where id=#{id}
+	</update>
+	<!-- 删除部门 -->
+	<!--void remove(Serializable id); -->
+	<delete id="remove" parameterType="long">
+		delete from t_department where
+		id=#{id}
+	</delete>
+	<!-- 通过部门id获取部门 -->
+	<select id="loadById" parameterType="long" resultType="Department">
+		select *
+		from
+		t_department where id = #{id}
+	</select>
+	<!-- List<Department> loadAll(); -->
+	<select id="loadAll" resultType="Department">
+		select * from t_department
+	</select>
+	<!-- 查询部门分级树,combotree -->
+	<select id="loadDepartmentTree" resultMap="departmentTree">
+		SELECT
+		t.id,
+		t. NAME,
+		d.id did,
+		d. NAME dname
+		FROM
+		t_department t
+		LEFT JOIN t_department d ON d.parent_id = t.id
+		WHERE
+		t.parent_id IS NULL
+	</select>
+	<resultMap type="department" id="departmentTree">
+	<id property="id" column="id"/>
+	<result property="name" column="name"/>
+	<collection property="children"  ofType="department">
+	<id property="id" column="did"/>
+	<result property="name" column="dname"/>
+	</collection>
+	
+	</resultMap>
+	<!-- 查询总数 -->
+	<select id="queryPageCount" resultType="int" parameterType="departmentQuery">
+		select count(*) from t_department p
+		<include refid="whereSql" />
+	</select>
+	<!-- 查询分页数据 -->
+	<!-- 
+	<select id="queryPageData"  resultMap="departmentMap" parameterType="DepartmentQuery">
+	select
+	d.id,
+	d.sn,
+	d.name,
+	d.dirpath,
+	d.state,
+	e.id eid,
+	e.realName,
+	e.department_id,
+	
+	p.id pid,
+	p.name pName
+
+	from t_department d
+	LEFT JOIN t_employee e ON d.manager_id=e.id
+	LEFT JOIN t_department p ON d.parent_id=p.id
+	<include refid="whereSql"/>
+	limit #{start},#{rows}
+</select> -->
+<!-- 	<select id="queryPageData"  resultMap="departmentMap" parameterType="DepartmentQuery">
+	select
+	d.id,
+	d.sn,
+	d.name,
+	d.dirpath,
+	d.state,
+	e.id eid,
+	e.realName,
+	e.department_id,
+	p.id pid,
+	p.name pName
+
+	from t_department d
+	LEFT JOIN t_employee e ON d.manager_id=e.id
+	LEFT JOIN t_department p ON d.parent_id=p.id
+	<include refid="whereSql"/>
+	limit #{start},#{rows}
+</select> -->
+	<!-- <select id="queryPageRows" resultType="department" parameterType="departmentQuery"> 
+		select * from t_department limit #{start},#{rows} </select> -->
+	<!-- 查询分页数据 -->
+	<select id="queryPageData" resultMap="departmentMap"
+		parameterType="departmentQuery">
+		SELECT
+		p.*,e.realName,e.id eid,t.id tid,t.name tname
+		FROM
+		t_department p
+		LEFT JOIN t_employee e ON e.id = p.manager_id
+		LEFT JOIN t_department t
+		on t.id=p.parent_id
+		<include refid="whereSql" />
+		limit #{start},#{rows}
+
+	</select>
+	<!-- 条件sql -->
+	<sql id="whereSql">
+		<where>
+			<!-- q关键字作用于那些字段,name和sn -->
+			<if test="q != null and q!=''">
+				and (p.name like concat('%',#{q},'%') or p.sn like
+				concat('%',#{q},'%')or p.dirPath like
+				concat('%',#{q},'%'))
+			</if>
+			<!-- -2表示没有选择状态 -->
+			<if test="state != -2">
+				and p.state = #{state}
+			</if>
+			<!-- 上级部门 -->
+			<if test="parentId != null">
+				and p.parent_id = #{parentId}
+			</if>
+			<!-- 部门经理 -->
+			<if test="managerId != null">
+				and p.manager_id = #{managerId}
+			</if>
+		</where>
+	</sql>
+
+
+</mapper>

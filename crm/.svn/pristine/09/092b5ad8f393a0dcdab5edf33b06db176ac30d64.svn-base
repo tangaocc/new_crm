@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.CustomerTraceHistoryMapper">
+	<!-- void save(T t); -->
+	<insert id="save" parameterType="CustomerTraceHistory">
+		insert into
+		t_customertracehistory(
+		traceTime,
+		traceResult,
+		title,
+		remark,
+		customer_id,
+		traceUser_id,
+		traceType_id)
+		values(
+		#{traceTime},
+		#{traceResult},
+		#{title},
+		#{remark},
+		#{customer.id},
+		#{traceUser.id},
+		#{traceType.id})
+	</insert>
+
+	<!-- void update(T t); -->
+	<update id="update" parameterType="CustomerTraceHistory">
+		update t_customertracehistory
+		set
+		traceTime=#{traceTime},
+		traceResult=#{traceResult},
+		title=#{title},
+		customer_id=#{customer.id},
+		traceUser_id=#{traceUser.id},
+		traceType_id=#{traceType.id},
+		remark=#{remark}
+		where id=#{id}
+	</update>
+
+
+	<!-- List<CustomerTraceHistory> loadAll(); -->
+	<select id="loadAll" resultType="CustomerTraceHistory">
+		select * from
+		t_customertracehistory
+	</select>
+
+	<!-- T loadById(Serializable id); -->
+
+	<select id="loadById" parameterType="long" resultType="CustomerTraceHistory">
+		select *
+		from t_customertracehistory where id=#{id}
+	</select>
+
+
+	<!--void remove(Serializable id); -->
+	<delete id="remove" parameterType="long">
+		delete from
+		t_customertracehistory where
+		id = #{id}
+	</delete>
+
+	<!-- 查询有多少条 -->
+	<select id="queryPageCount" resultType="int">
+		select count(*) from
+		t_customertracehistory c
+		<include refid="wheresql" />
+	</select>
+
+
+
+	<!-- 查询分页数据 -->
+	<select id="queryPageData" resultMap="customerTraceHistoryMap"
+		parameterType="CustomerTraceHistoryQuery">
+		SELECT
+		c.*,
+		u.id uId,
+		u.name uName,
+		e.id eId,
+		e.realName eName,
+		s.id sID,
+		s.name sName
+		from t_customertracehistory c
+		LEFT JOIN t_customer u on c.customer_id=u.id
+		LEFT JOIN t_employee e on c.traceUser_id=e.id
+		LEFT JOIN t_systemdictionaryitem s on c.traceType_id=s.id
+		<include refid="wheresql" />
+		limit
+		#{start},#{rows}
+
+	</select>
+
+	<sql id="wheresql">
+		<where>
+			<if test="q !=null and q!=''">
+				and (c.customer.id like concat("%",#{q},"%"))
+			</if>
+
+			<if test="title != null and title!=''">
+				and (c.title = #{title})
+			</if>
+			<if test="traceUserId !=null and traceUserId!=''">
+				and (c.traceUser_id = #{traceUserId})
+			</if>
+			<if test="traceTypeId != null and traceTypeId !=''">
+				and (c.traceType_id = #{traceTypeId})
+			</if>
+			<if test="traceResult != -2 and traceResult!=null" >
+				and (c.traceResult = #{traceResult})
+			</if>
+
+		</where>
+	</sql>
+	<!-- private SystemDictionaryItem customerSource;//数据字典合拼 //创建人 自动填入当前登录用户，用户不可更改 
+		输入框只读 必填 private Integer state=1; -->
+	<resultMap type="CustomerTraceHistory" id="customerTraceHistoryMap">
+		<id column="id" property="id" />
+		<result column="traceTime" property="traceTime" />
+		<result column="traceResult" property="traceResult" />
+		<result column="title" property="title" />
+		<result column="remark" property="remark" />
+		<association property="customer" javaType="Customer">
+			<id column="uId" property="id" />
+			<result column="uName" property="name" />
+		</association>
+		<association property="traceUser" javaType="Employee">
+			<id column="eId" property="id" />
+			<result column="eName" property="realName" />
+		</association>
+		<association property="traceType" javaType="SystemDictionaryItem">
+			<id column="sId" property="id" />
+			<result column="sName" property="name" />
+		</association>
+	</resultMap>
+
+</mapper>

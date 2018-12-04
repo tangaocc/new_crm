@@ -1,0 +1,274 @@
+package cn.tencent.crm.web.controller;
+
+import cn.tencent.crm.annotation.OwnPermission;
+import cn.tencent.crm.domain.Customer;
+import cn.tencent.crm.domain.Employee;
+import cn.tencent.crm.domain.SystemDictionaryItem;
+import cn.tencent.crm.query.CustomerQuery;
+import cn.tencent.crm.service.ICustomerService;
+import cn.tencent.crm.service.IEmployeeService;
+import cn.tencent.crm.service.ISystemDictionaryItemService;
+import cn.tencent.crm.util.AjaxResult;
+import cn.tencent.crm.util.PageList;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Controller
+@RequestMapping("/customer")
+public class CustomerController {
+	@Autowired
+	private ICustomerService customerService;
+
+	@RequestMapping("/index")
+	@OwnPermission("客户管理")
+	public String index() {
+
+		return "customer/index";
+	}
+	@RequestMapping("/indexs")
+	public String indexs() {
+		
+		return "customerResourcePool/index";
+	}
+
+	@RequestMapping("/list")
+	@ResponseBody
+	@OwnPermission("客户列表")
+	public PageList<Customer> list(CustomerQuery query) {
+
+		return customerService.queryPageData(query);// 分页查询
+	}
+
+	// 删除数据
+	/**
+	 * 参数：id 返回值： {"success":true,"message":"xxxx"} 原来：response.getWriter()
+	 * .print("{\"success\":true,\"message\":\"恭喜你!删除成功\"}");
+	 * 现在：springMVC有一个注解@ResponseBody，会把返回对象(AjaxResult(相当于原来ResultHelper))
+	 * 使用Jackson框架完成json数据转换 ,而AjaxResult类应该有两个属性（success，message）
+	 * 
+	 * @param id
+	 * @return
+	 */
+
+	@RequestMapping("/delete")
+	@ResponseBody
+	@OwnPermission("客户删除")
+	public AjaxResult delete(Long id) {
+
+		try {
+			customerService.delete(id);
+			// 成功
+			return new AjaxResult();
+		} catch (Exception e) {
+			e.printStackTrace();
+			// 失败
+			return new AjaxResult("删除失败！" + e.getMessage());
+		}
+	}
+
+	// 保存
+	@RequestMapping("/save")
+	@ResponseBody
+	@OwnPermission("客户保存")
+	public AjaxResult save(Customer customer) {
+		// 区分是新增还是修改
+		try {
+			if (customer.getId() != null) {
+				// 修改
+				customerService.update(customer);
+			} else {
+				// 新增
+				customerService.add(customer);
+			}
+			return new AjaxResult();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new AjaxResult("保存失败，" + e.getMessage());
+		}
+
+	}
+	@RequestMapping("/delPool")
+	@ResponseBody
+	public AjaxResult delPool(Long id) {
+
+		try {
+			customerService.delPool(id);
+			// 成功
+			return new AjaxResult();
+		} catch (Exception e) {
+			e.printStackTrace();
+			// 失败
+			return new AjaxResult("删除失败！" + e.getMessage());
+		}
+	}
+	// 查询创建人
+	@Autowired
+	private IEmployeeService employeeService;
+
+	//查询所有员工做CRUD
+	@RequestMapping("/queryEmployee")
+	@ResponseBody
+	public List<Employee> queryEmployee() {
+		List<Employee> list = employeeService.getAll();
+		return list;
+	}
+
+	// 查询客户来源
+	@Autowired
+	private ISystemDictionaryItemService systemDictionaryItemService;
+
+	@RequestMapping("/querySystemDictionaryItem")
+	@ResponseBody
+	public List<SystemDictionaryItem> querySystemDictionaryItem() {
+		List<SystemDictionaryItem> list = systemDictionaryItemService.getAll();
+		return list;
+	}
+
+	// 修改状态,跟进
+	@RequestMapping("/changeState")
+	@ResponseBody
+	public AjaxResult changeState(Customer customer) {
+
+		try {
+			customerService.changeState(customer);
+			return new AjaxResult();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new AjaxResult("跟进失败!");
+		}
+	}
+	// 客户添加到资源池
+		@RequestMapping(value = "/poolSave", method = RequestMethod.POST)
+		public @ResponseBody int poolSave(@RequestBody Customer c) {
+			System.out.println(c);
+			customerService.addPool(c);
+			return 0;
+		}
+
+		// 展示资源池
+		@RequestMapping("/listPool")
+		@ResponseBody
+		public PageList<Customer> listPool(CustomerQuery query) {
+			PageList<Customer> pageList = customerService.findByQueryPool(query);
+			return pageList;
+		}
+
+
+	// 饼图
+	@RequestMapping("/source3d")
+	@ResponseBody
+	public List<Map<Object, Object>> source3d() {
+
+		// 把list数据转换为前台需要的json格式
+		/*List<Map<Object, Object>> data = new ArrayList<Map<Object, Object>>();
+		HashMap<Object,Object> map = new HashMap<>();
+		map.put("name", "介绍");
+		map.put("y", 2);
+		data.add(map);
+		HashMap<Object,Object> map1 = new HashMap<>();
+		map1.put("name", "抢的");
+		map1.put("y", 1);
+		data.add(map1);
+		HashMap<Object,Object> map2 = new HashMap<>();
+		map2.put("name", "抢的");
+		map2.put("y", 1);
+		data.add(map2);
+		System.out.println(data.toString());*/
+		List<Long> list = customerService.getCusSourceId();
+		List<SystemDictionaryItem> list2 = systemDictionaryItemService.getNameId();
+		List<Map<Object, Object>> data = new ArrayList<Map<Object, Object>>();
+		HashMap<Object,Object> map = null;
+		for (int i = 0; i < list2.size(); i++) {
+			int count=1;
+			map=new HashMap<>();
+			for (int j = 0; j < list.size(); j++) {
+				if (list.get(j)==list2.get(i).getId()) {
+					map.put("y", count);
+					map.put("name", list2.get(i).getName());
+					count++;
+				}
+			}
+			if (map.size()!=0) {
+				
+				data.add(map);
+			}	
+		}
+		
+		System.out.println(data.toString());
+		return data;
+	}
+	
+	 //==============工作流===========================
+	 //"/customer/startProcess?businessObjId="+id
+	@RequestMapping("/startProcess")
+	@ResponseBody
+	public AjaxResult startProcess(Long businessObjId) {
+		try {
+			//不能在Controller实现，以下是两个操作，需要事务保证一致性
+			customerService.startProcess(businessObjId);
+			return new AjaxResult();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new AjaxResult("开启流程失败！"+e.getMessage());
+		}
+	}
+	
+	@RequestMapping("/loadFormData")
+	@ResponseBody
+	public Map<String,String> loadFormData(Long id) {
+		Customer customer = customerService.getById(id);
+		
+		//申明
+		Map<String,String> result = new HashMap<>();
+		//转换
+		//1)名称
+		result.put("name", customer.getName());
+		//2)性别
+		String genderStr = "未知";
+		if (customer.getGender() != null) {
+			if (customer.getGender() == 1) {
+				genderStr = "男";
+			}else if (customer.getGender() == 0) {
+				genderStr = "女";
+			}
+		}
+		result.put("gender", genderStr);
+		//3 营销人员
+		if (customer.getSeller() != null) {
+			result.put("seller", customer.getSeller().getRealName());
+		}
+		//4 职业
+		if (customer.getJob() != null) {
+			result.put("job", customer.getJob().getName());
+		}
+		
+		//返回
+		return result;
+		
+	}
+	
+	@RequestMapping("/getTransNames")
+	@ResponseBody
+	public List<String> getTransNames(String  taskId) {
+		/*
+		 * 顺序流的按钮
+		 */
+		List<String> transNames = this.customerService.getTransNames(taskId);
+		return transNames;
+	
+	}
+	
+	//==============工作流===========================
+	
+
+}

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.RepairMapper">
+	<insert id="save" parameterType="Repair" useGeneratedKeys="true" 
+		keyColumn="id" keyProperty="id">
+		insert into t_repair(sn,repairTime,state,customer_id,contract_id) 
+		values(#{sn},#{repairTime},#{state},#{customer.id},#{contract.id})
+	</insert>
+
+	<update id="update" parameterType="Repair">
+		update t_repair set 
+			sn=#{sn},repairTime=#{repairTime},state=#{state},customer_id=#{customer.id},contract_id=#{contract.id}
+		where id=#{id}
+	</update>
+
+	<delete id="remove" parameterType="long">
+		delete from t_repair where id=#{id}
+	</delete>
+	<!-- 暂时先 改成这样 后面还要改 -->
+	<select id="loadById" parameterType="long" resultType="Repair">
+		select g.* from t_repair g where g.id=#{id}
+	</select>
+
+	<select id="loadAll" resultType="Repair">
+		select g.* from t_repair g
+	</select>
+	
+	
+	<!-- 高级查询部分 -->
+	<!-- 公共的sql语句 -->
+	<sql id="commonSql">
+		from t_repair o left join t_contract e on o.contract_id = e.id 
+					       left join t_customer c on o.customer_id = c.id
+		<where>
+			<!-- 订单的sn属性进行like查询 -->
+			<if test="q!=null and q!=''">
+				and o.sn like concat('%',#{q},'%') 
+			</if>
+			<!-- 根据客户的id来查询 -->
+			<if test="customerId != null and customerId != -1">
+				and o.customer_id = #{customerId}
+			</if>
+			<!-- 根据营销员的id来查询 -->
+			<if test="constractId != null and sellerId != -1">
+				and o.constract_id = #{constractId}
+			</if>
+			<if test="state!=null and state!=-1">
+				and o.state=#{state}
+			</if>
+		</where>
+	</sql>
+
+	<!-- 总记录数查询 -->
+	<select id="queryPageCount" resultType="int" parameterType="RepairQuery">
+		select count(o.id) 
+		<include refid="commonSql" />
+	</select>
+
+	<!-- 分页查询 -->
+	<!-- limit -->
+	<select id="queryPageData" resultMap="repairResultMap"
+		parameterType="RepairQuery">
+		select o.id, o.sn, o.state, o.repairTime,  
+		e.id eid, e.sn esn,c.id cid,c.name cname 
+		<include refid="commonSql" />
+		limit #{start},#{rows}
+	</select>
+
+
+	<resultMap type="Repair" id="repairResultMap">
+		
+		<id property="id" column="id" />
+		<result property="sn" column="sn" />
+		<result property="state" column="state" />
+		<result property="repairTime" column="repairTime" />
+		
+		<!-- 处理一方:customer_id -->
+		<association property="customer" javaType="Customer">
+			<id property="id" column="cid" />
+			<result property="name" column="cname" />
+		</association>
+		
+		<!-- 处理一方:contract_id  -->
+		<association property="contract" javaType="Contract">
+			<id property="id" column="eid" />
+			<result property="sn" column="esn" />
+		</association>
+		
+<!-- 		 处理多方：items（合同明细） -->
+		<collection property="items" select="cn.tencent.crm.mapper.RepairMapper.findItemsByRepairId"
+		 column="id">
+			<id property="id" column="id" />
+			<result property="repairTime" column="repairTime" />
+			<result property="repairText" column="repairText" />
+			<result property="settle" column="settle" />
+		</collection>
+	</resultMap>
+
+	<!-- 一对多的查询需要使用嵌套查询来分页，不然会出问题，计数会计算明细的个数 -->
+	<select id="findItemsByRepairId" resultType="RepairItem" parameterType="long">
+		select
+		id,repairTime,repairText,settle from t_repairitem where repair_id=#{id}
+	</select>
+
+</mapper>

@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.CustomerMapper">
+	<!-- void save(T t); -->
+	<insert id="save" parameterType="Customer">
+		insert into t_customer(name,age,gender,tel,email,qq,wechat,inputTime,state,seller_id,job_id,salaryLevel_id,customerSource_id,inputUser_id)
+		values(#{name},#{age},#{gender},#{tel},#{email},#{qq},#{wechat},#{inputTime},#{state},#{seller.id},#{job.id},#{salaryLevel.id},#{customerSource.id},#{inputUser.id})
+	</insert>
+
+	<!-- void update(T t); -->
+	<update id="update" parameterType="Customer">
+		update t_customer set 
+		name=#{name},
+		age=#{age},
+		gender=#{gender},
+		tel=#{tel},
+		email=#{email},
+		qq=#{qq},
+		wechat=#{wechat},
+		inputTime=#{inputTime},
+		state=#{state},
+		seller_id=#{seller.id},
+		job_id=#{job.id},
+		salaryLevel_id=#{salaryLevel.id},
+		customerSource_id=#{customerSource.id},
+		inputUser_id=#{inputUser.id}
+		
+		where id=#{id}
+	</update>
+
+	<select id="getCustomerSourceId" resultType="long">
+		select c.customerSource_id from t_customer c
+	</select>
+	
+	<!-- List<Customer> loadAll(); -->
+	<select id="loadAll" resultType="Customer">
+		select * from t_customer
+	</select>
+	
+	<!-- T loadById(Serializable id); -->
+	
+	<select id="loadById" parameterType="long" resultMap="customerMap">
+		SELECT
+			c.*,
+			m.id mId,
+			m.realName mName,
+			y.id yId,
+			y.requence yName,
+			t.id tId,
+			t.name tName,
+			s.id sId,
+			s.intro sName, 
+			e.id eId,
+			e.realName eName
+			from t_customer c
+			LEFT JOIN t_employee m on c.seller_id=m.id 
+			LEFT JOIN t_systemdictionaryitem y on c.job_id=y.id
+			LEFT JOIN t_systemdictionaryitem t on c.salaryLevel_id=t.id
+			LEFT JOIN t_systemdictionaryitem s on c.customerSource_id=s.id
+			LEFT JOIN t_employee e on c.inputUser_id=e.id 
+		
+		where c.id=#{id}
+	</select>
+	
+	<!--修改客户状态  -->
+	<update id="changeState" parameterType="Customer">
+		update t_customer set
+		<include refid="statesql"/>
+	</update>
+	<sql id="statesql">
+		
+		<if test="state==-1 and state!=null">
+			state=0 where id=#{id}
+		</if>
+		<if test="state==0 and state!=null">
+			state=1 where id=#{id}
+		</if>
+		<if test="state==1 and state!=null">
+			state=2 where id=#{id}
+		</if>
+		<if test="state!=-1 and state!=0 and state!=1 and state!=null">
+			state=3 where id=#{id}
+		</if>
+	</sql>
+	
+	<!--void remove(Serializable id); -->
+	<delete id="remove" parameterType="long">
+		delete from t_customer where
+		id = #{id}
+	</delete>
+	
+	<!-- 查询有多少条 -->
+	<select id="queryPageCount" resultType="int">
+		select count(*) from
+		t_customer c
+		<include refid="wheresql"/>
+	</select>
+	
+	
+	 
+	<!-- 查询分页数据 -->
+	<select id="queryPageData" resultMap="customerMap"
+		parameterType="CustomerQuery">
+		SELECT
+		c.*,
+		m.id mId,
+		m.realName mName,
+		y.id yId,
+		y.requence yName,
+		t.id tId,
+		t.name tName,
+		s.id sId,
+		s.intro sName, 
+		e.id eId,
+		e.realName eName
+		from t_customer c
+		LEFT JOIN t_employee m on c.seller_id=m.id 
+		LEFT JOIN t_systemdictionaryitem y on c.job_id=y.id
+		LEFT JOIN t_systemdictionaryitem t on c.salaryLevel_id=t.id
+		LEFT JOIN t_systemdictionaryitem s on c.customerSource_id=s.id
+		LEFT JOIN t_employee e on c.inputUser_id=e.id 
+		
+		<include refid="wheresql"/>
+		limit
+		#{start},#{rows}
+
+	</select>
+	
+	
+	<sql id="wheresql">
+		<where>
+			<if test="q !=null and q!=''">
+				and (c.name like concat("%",#{q},"%"))
+			</if>
+			<!-- -2表示没有选择状态 -->
+     		<if test="state != -2 and state!=null" >
+     		  and (c.state = #{state})
+     		</if>
+     		<if test="inputUserId !=null and inputUserId!=''">
+     		  and (c.inputUser_id = #{inputUserId})
+     		</if>
+     		<if test="customerSourceId != null and customerSourceId !=''">
+     		  and (c.customerSource_id = #{customerSourceId})
+     		</if>
+     		<if test="jobId != null and jobId!=''" >
+     		  and (c.job_id = #{jobId})
+     		</if>
+     		<if test="salaryLevelId != null and salaryLevelId!=''" >
+     		  and (c.salaryLevel_id = #{salaryLevelId})
+     		</if>
+     		
+     		<if test="sellerId != null and sellerId!=''" >
+     		  and (c.seller_id = #{sellerId})
+     		</if>
+			<!-- 横向越权管理 -->
+     		<if test="!isAdminOrMarketManager and loginUserId!=null" >
+     		  and (c.seller_id = #{loginUserId})
+     		</if>
+     		
+     		
+		</where>
+	</sql>
+	<!-- private SystemDictionaryItem customerSource;//数据字典合拼 //创建人 自动填入当前登录用户，用户不可更改 
+		输入框只读 必填 private Integer state=1;
+		
+		 -->
+	<resultMap type="Customer" id="customerMap">
+		<id column="id" property="id" />
+		<result column="name" property="name" />
+		<result column="age" property="age" />
+		<result column="gender" property="gender" />
+		<result column="tel" property="tel" />
+		<result column="email" property="email" />
+		<result column="qq" property="qq" />
+		<result column="wechat" property="wechat" />
+		<result column="inputTime" property="inputTime" />
+		<result column="state" property="state" />
+		<association property="seller" javaType="Employee">
+			<id column="mId" property="id" />
+			<result column="mName" property="realName" />
+		</association>
+	
+		<association property="job" javaType="SystemDictionaryItem">
+			<id column="yId" property="id" />
+			<result column="sName" property="name" />
+		</association>
+		<association property="salaryLevel" javaType="SystemDictionaryItem">
+			<id column="tId" property="id" />
+			<result column="yName" property="name" />
+		</association>
+		<association property="customerSource" javaType="SystemDictionaryItem">
+			<id column="sId" property="id" />
+			<result column="tName" property="name" />
+		</association>
+		<association property="inputUser" javaType="Employee">
+			<id column="eId" property="id" />
+			<result column="eName" property="realName" />
+		</association>
+
+
+	</resultMap>
+	<!-- 资源池保存 -->
+	<insert id="savePool" parameterType="Customer" useGeneratedKeys="true"
+		keyProperty="id" keyColumn="id">
+			insert into
+			t_customerresourcepool(name,tel,gender,seller_id,customerSource_id,state,inputTime)
+			values(#{name},#{tel},#{gender},#{seller.id},#{customerSource.id},#{state},#{inputTime})
+	</insert>
+	
+	<delete id="delPool" parameterType="long">
+		delete from t_customerresourcepool where id=#{id}
+	</delete>
+	
+	<!--资源池展示  -->
+	<select id="getTotalCountPool" parameterType="CustomerQuery"
+		resultType="int">
+			SELECT
+				count(*)
+			FROM
+				t_customerresourcepool c
+			LEFT JOIN t_systemdictionaryitem s ON s.id = c.customerSource_id
+			LEFT JOIN t_employee e ON e.id = c.seller_id
+	</select>
+	
+	<select id="getLimitDatasPool" resultMap="customerMapPool" parameterType="CustomerQuery">
+				SELECT
+					c.id cid,
+					c.gender,
+					c.tel,
+					c.name,
+
+					c.state,
+					c.inputTime,
+
+					s.id sid,
+					s.name sname,
+					e.id eid,
+					e.realName ename
+				FROM
+					t_customerresourcepool c
+				LEFT JOIN t_systemdictionaryitem s ON s.id = c.customerSource_id
+				LEFT JOIN t_employee e ON e.id = c.seller_id
+				limit #{start},#{rows}
+	</select>
+	
+	<resultMap type="Customer" id="customerMapPool">
+		<!-- 基本属性处理 -->
+			<id property="id" column="cid"/>
+			<result property="name" column="name"/>
+			<result property="gender" column="gender"/>
+			<result property="tel" column="tel"/>
+			<result column="state" property="state" />
+			<result column="inputTime" property="inputTime" />
+	<!--关联属性  -->
+		<association property="seller" javaType="Employee">
+			<id column="eid" property="id"/>
+			<result column="ename" property="realName"/>
+		</association>
+		
+		<association property="customerSource" javaType="SystemDictionaryItem">
+			<id column="sid" property="id"/>
+			<result column="sname" property="name"/>
+		</association>
+		
+	</resultMap>
+
+</mapper>

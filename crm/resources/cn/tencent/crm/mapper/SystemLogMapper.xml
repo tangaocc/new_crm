@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.SystemLogMapper">
+
+	
+	<!-- <select id="list" resultType="SystemLog">
+	select * form t_systemLog
+	</select>
+	
+		 查询有多少条
+	 <select id="queryPageCount" resultType="int">
+	 	select count(*) from t_systemLog
+	 </select>
+	查询分页数据
+	<select id="queryPageData"  parameterType="SystemLogQuery">
+		select *
+		from t_systemLog  
+		limit #{start},#{rows}
+	</select> -->
+	<!-- <resultMap type="Department" id="departmentMap">
+		<id column="id"  property="id"/>
+		<result column="sn"  property="sn" />
+		<result column="name"  property="name" />
+		<result column="dirPath"  property="dirPath" />
+		<result column="state"  property="state" />
+	<association property="manager" javaType="Employee">
+			<id column="eid"  property="id"/>
+			<result column="realName"  property="realName" />
+		</association>
+		<association property="parent" javaType="Department">
+			<id column="pid"  property="id"/>
+			<result column="pName"  property="name" />
+		</association> 
+		
+
+	</resultMap> -->
+	
+	
+	
+	
+</mapper>

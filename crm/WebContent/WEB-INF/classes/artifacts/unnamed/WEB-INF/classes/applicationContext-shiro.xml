@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns:context="http://www.springframework.org/schema/context"
+xmlns:mvc="http://www.springframework.org/schema/mvc"
+xmlns:tx="http://www.springframework.org/schema/tx"
+xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.1.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.1.xsd"
+>
+  <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="sessionMode" value="native"/><!-- 
+        SecurityManager做事情的时候，需要通过realm获取数据 -->
+        <property name="realm" ref="jdbcRealm"/>
+    </bean>
+   <!--  2 准备一个realm，只需实现一个Realm接口即可 -->
+    <bean id="jdbcRealm" class="cn.tencent.crm.shiro.reaml.MyReaml">
+    
+    	<!-- 2.1 由于数据库返回是加密密码，就要告诉shiro要使用加密比对，加密算法和次数要和数据库保持一致 -->
+    	 <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="MD5"/><!-- 加密算法 -->
+                <property name="hashIterations" value="1000"/><!-- 加密次数 -->
+            </bean>
+        </property>
+    </bean>  
+  <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/login.jsp"/>
+        <property name="successUrl" value="/main/index"/>
+        <!-- 没有权限地址，如果框访问要特定权限才能访问的资源时，如果没有权限就会跳转到这个地址  -->
+        <property name="unauthorizedUrl" value="/unauthorized.jsp"/>
+        <!-- 配置自定义过滤器 -->
+		<property name="filters">
+            <map>
+                <entry key="crmFilter">
+                    <bean class="cn.tencent.crm.shiro.filter.TencentPermissionsAuthorizationFilter" />
+                </entry>
+            </map>
+        </property> 
+        <!-- <property name="filterChainDefinitions">
+            <value>
+                登录页面放行
+                /login.jsp= anon
+                登录处理也要放行
+                /login/in= anon
+                静态资源放行
+                /resources/**=anon
+                退出
+                /logout=logout
+                权限
+                其他的所有的都需要登录
+                 /** = authc  
+            </value>
+        </property> -->
+      <property name="filterChainDefinitionMap" ref="filterChainDefinitionMap"/>
+    </bean>
+    
+    <!-- shiro授权 -->
+	<!-- 配置factorybean -->
+	<bean id="filterChainDefinitionMapFactoryBean"  class="cn.tencent.crm.shiro.LoginFactoryBean">
+	
+	</bean>
+	<!-- 通过调用factoryBean的某个方法，把返回值当作一个bean -->
+	<bean id="filterChainDefinitionMap"  factory-bean="filterChainDefinitionMapFactoryBean"  
+	      factory-method="buildFilterChainDefinitionMap"></bean>
+	
+</beans>

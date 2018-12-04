@@ -1,0 +1,118 @@
+package cn.tencent.crm.domain;
+
+import java.util.Date;
+
+import org.springframework.format.annotation.DateTimeFormat;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+//定金订单
+public class Order {
+	//定金订单ID
+	private Long id;
+	//定金单号
+	private Date sn = new Date();
+	//定金客户
+	private Customer customer;
+	//签订时间
+	private Date signTime = new Date();
+	//营销人员
+	private Employee seller;
+	//定金金额(保修单明细金额)
+	private Long sum;
+	//状态（是否生成合同）
+	private Long state;
+	//摘要
+	private String intro;
+	//将订单关联到合同，一个订单对应一个合同
+	private Contract contract;
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
+	
+	public Date getSn() {
+		return sn;
+	}
+	
+	public Contract getContract() {
+		return contract;
+	}
+	public void setContract(Contract contract) {
+		this.contract = contract;
+	}
+	public void setSn(Date sn) {
+		this.sn = sn;
+	}
+	public Customer getCustomer() {
+		return customer;
+	}
+	public void setCustomer(Customer customer) {
+		this.customer = customer;
+	}
+	@JsonFormat(pattern="yyyy-MM-dd",timezone="GMT+8")
+	public Date getSignTime() {
+		return signTime;
+	}
+	@DateTimeFormat(pattern="yyyy-MM-dd")
+	public void setSignTime(Date signTime) {
+		this.signTime = signTime;
+	}
+	public Employee getSeller() {
+		return seller;
+	}
+	public void setSeller(Employee seller) {
+		this.seller = seller;
+	}
+	public Long getSum() {
+		return sum;
+	}
+	public void setSum(Long sum) {
+		this.sum = sum;
+	}
+	public String getIntro() {
+		return intro;
+	}
+	public void setIntro(String intro) {
+		this.intro = intro;
+	}
+	
+	
+	public Long getState() {
+		return state;
+	}
+	public void setState(Long state) {
+		this.state = state;
+	}
+	public Order(Long id, Date sn, Customer customer, Date signTime, Employee seller, Long sum, String intro,
+		long state,Contract contract) {
+		super();
+		this.id = id;
+		this.sn = sn;
+		this.customer = customer;
+		this.signTime = signTime;
+		this.seller = seller;
+		this.sum = sum;
+		this.intro = intro;
+		this.state = state;
+		this.contract=contract;
+	}
+	public Order() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	@Override
+	public String toString() {
+		return "Order [id=" + id + ", sn=" + sn + ", customer=" + customer + ", signTime=" + signTime + ", seller="
+				+ seller + ", sum=" + sum + ", state=" + state + ", intro=" + intro + "]";
+	}
+
+
+
+	
+	
+	
+	
+}

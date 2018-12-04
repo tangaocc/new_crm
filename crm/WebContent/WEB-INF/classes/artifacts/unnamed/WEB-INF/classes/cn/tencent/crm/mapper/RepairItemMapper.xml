@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 这个Mapper的主要功能就是写sql mapper:根 namespace:命令空间 (用来确定唯一) 以前这个是可以不加的,现在必需加 
+	namespace的值，规则的：映射文件XxxMapper.xml所在的包+domain类名+Mapper -->
+<mapper namespace="cn.tencent.crm.mapper.RepairItemMapper">
+	
+	<select id="save" parameterType="RepairItem">
+		insert into t_repairitem(repairTime,repairText,settle,repair_id) values(#{repairTime},#{repairText},#{settle},#{repair.id})
+	</select>
+
+	<update id="update" parameterType="RepairItem">
+		update t_repairitem set repairTime=#{repairTime},repairText=#{repairText},settle=#{settle},repair_id=#{repair.id} where id=#{id}
+	</update>
+
+	<delete id="remove" parameterType="long">
+		delete from t_repairitem where repair_id=#{id}
+	</delete>
+	<!-- 暂时先 改成这样 后面还要改 -->
+	<select id="loadByid" parameterType="long" resultType="RepairItem">
+		select * from t_repairitem m where id=#{id}
+	</select>
+
+	<select id="loadAll" resultType="RepairItem">
+		select * from t_repairitem 
+	</select>
+		<select id="findItemsByRepairId" resultType="RepairItem" parameterType="long">
+		select id,repairTime,repairText,settle from t_repairitem where repair_id=#{id}
+	</select>
+</mapper> 

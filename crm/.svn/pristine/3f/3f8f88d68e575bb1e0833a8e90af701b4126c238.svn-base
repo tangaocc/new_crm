@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tencent.crm.mapper.ContractItemMapper">
+	<select id="loadById" parameterType="long" resultType="ContractItem">
+		select * from t_contractitem where id = #{id}
+	</select>
+	
+	<select id="loadAll" resultType="ContractItem">
+		select * from t_contractitem
+	</select>
+	<delete id="remove" parameterType="long">
+		delete from t_contractitem where contract_id = #{id}
+	</delete>
+	
+	<insert id="save" parameterType="ContractItem">
+		insert into t_contractitem(payTime,money,scale,isPayment,contract_id) 
+		values(#{payTime},#{money},#{scale},#{isPayment},#{contract.id})
+	</insert>
+	
+	<update id="update" parameterType="ContractItem">
+		update t_contractitem set 
+		payTime=#{payTime},money=#{money},scale=#{scale},isPayment=#{isPayment},contract_id=#{contract.id} 
+		where id=#{id}
+	</update>
+	
+	<select id="queryPageCount" resultType="int" parameterType="ContractItemQuery">
+		select count(*) from t_contractitem o
+	</select>
+	
+	<select id="queryPageData" parameterType="ContractItemQuery" resultMap="contractItemMap">
+		select i.*,i.payTime,c.id cid,c.sn csn from t_contractitem i 
+		left join t_contract c on i.contract_id = c.id
+		limit #{start},#{rows}
+	</select>
+	
+	
+	<resultMap type="ContractItem" id="contractItemMap">
+		<id property="id" column="id"/>
+		<result column="payTime" property="payTime"/>
+		<result column="money" property="money"/>
+		<result column="scale" property="scale"/>
+		<result column="isPayment" property="isPayment"/>
+		<association property="contract" javaType="Contract">
+			<id column="cid" property="id"/>
+			<result column="csn" property="sn"/>
+		</association>
+	</resultMap>
+	
+	<select id="getItemsById" resultType="ContractItem" parameterType="long">
+		select id,money,scale,payTime,isPayment from t_contractitem where contract_id=#{id}
+	</select>
+	
+</mapper>
